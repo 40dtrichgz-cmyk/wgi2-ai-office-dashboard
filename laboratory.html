@@ -89,21 +89,26 @@
 <body>
   <div id="ui">
     <div class="badge">WGI AI Laboratory · DEMO MODE · Liquid Glass 3D</div>
+    <div id="error-msg" style="position:absolute; top:80px; left:24px; color:#ff6b6b; display:none; font-size:13px; max-width:80%; word-wrap:break-word;"></div>
     <div id="tooltip"></div>
     <div class="hint">Orbit: drag · Zoom: scroll · Hover a person to see role, duties &amp; skills</div>
   </div>
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+        "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
       }
     }
   </script>
   <script type="module">
+    window.addEventListener('error', function(e) {
+      var el = document.getElementById('error-msg');
+      el.style.display = 'block';
+      el.textContent = 'JS Error: ' + (e.message || e.error);
+    });
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    THREE.SphereGeometry = THREE.SphereGeometry;
 
     /* ================= CONFIG ================= */
     const CONFIG = {
