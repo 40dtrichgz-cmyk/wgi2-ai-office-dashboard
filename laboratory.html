@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WGI AI Laboratory</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #0b0d14; color: #e5e7eb; font-family: 'Segoe UI', sans-serif; }
+    #info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(18, 22, 36, 0.85);
+      padding: 10px 14px;
+      border-radius: 8px;
+      pointer-events: none;
+      z-index: 1000;
+      font-size: 14px;
+    }
+    #label {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #00ffff;
+      font-weight: 600;
+      font-size: 18px;
+      z-index: 1000;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="info">WGI AI Laboratory <span style="color:#00ffff">DEMO MODE</span> — 12 departments active</div>
+  <div id="label">Click a department workstation to inspect</div>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.156.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.156.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x0b0d14);
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    camera.position.set(0, 7, 14);
+    controls.target.set(0, 1.5, 0);
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 7);
+    scene.add(directionalLight);
+
+    // Floor grid
+    const gridHelper = new THREE.GridHelper(20, 20, 0x34495e, 0x2c3e50);
+    gridHelper.position.y = 0.01;
+    scene.add(gridHelper);
+
+    // Department workstations
+    const departments = [
+      { name: "CEO", color: 0xfbbf24, position: [0, 0.5, 0] },
+      { name: "Strategy", color: 0x34d399, position: [5, 0.5, 0] },
+      { name: "Sales", color: 0x64748b, position: [5, 0.5, -5] },
+      { name: "Finance", color: 0x1e90ff, position: [0, 0.5, -5] },
+      { name: "HR", color: 0xff6b6b, position: [-5, 0.5, -5] },
+      { name: "Operations", color: 0x888888, position: [-5, 0.5, 5] },
+      { name: "Marketing", color: 0xf7931e, position: [-5, 0.5, 5] },
+      { name: "IT & Data", color: 0x00ced1, position: [5, 0.5, 5] },
+      { name: "Legal", color: 0x9b59b6, position: [0, 0.5, 5] },
+      { name: "Research", color: 0x2c3e50, position: [0, 0.5, -10] },
+      { name: "Support", color: 0x34495e, position: [10, 0.5, 0] },
+      { name: "Admin", color: 0x7f8c8d, position: [10, 0.5, -5] }
+    ];
+
+    departments.forEach(dept => {
+      // Desk base
+      const deskGeometry = new THREE.BoxGeometry(4, 0.6, 2.5);
+      const deskMaterial = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.7 });
+      const desk = new THREE.Mesh(deskGeometry, deskMaterial);
+      desk.position.set(...dept.position);
+      desk.position.y = 0.3;
+      scene.add(desk);
+
+      // Monitor
+      const monitorGeometry = new THREE.BoxGeometry(1.8, 1.4, 0.2);
+      const monitorMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, emissive: 0x00ffff, emissiveIntensity: 0.4 });
+      const monitor = new THREE.Mesh(monitorGeometry, monitorMaterial);
+      monitor.position.set(0.5, 1.2, 0);
+      desk.add(monitor);
+
+      // Keyboard
+      const kbGeometry = new THREE.BoxGeometry(1.6, 0.1, 0.7);
+      const kbMaterial = new THREE.MeshStandardMaterial({ color: 0x111111 });
+      const kb = new THREE.Mesh(kbGeometry, kbMaterial);
+      kb.position.set(0, 0.55, -0.9);
+      desk.add(kb);
+
+      // Agent icon
+      const iconGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+      const iconMaterial = new THREE.MeshStandardMaterial({ color: dept.color, emissive: dept.color, emissiveIntensity: 0.6 });
+      const icon = new THREE.Mesh(iconGeometry, iconMaterial);
+      icon.position.set(-1.5, 0.9, 0);
+      desk.add(icon);
+
+      // Nameplate
+      const plateGeometry = new THREE.BoxGeometry(2.2, 0.15, 0.12);
+      const plateMaterial = new THREE.MeshStandardMaterial({ color: dept.color, transparent: true, opacity: 0.9 });
+      const plate = new THREE.Mesh(plateGeometry, plateMaterial);
+      plate.position.set(0, 1.6, -1.1);
+      plate.rotation.y = Math.PI / 4;
+      desk.add(plate);
+    });
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

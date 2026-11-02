@@ -1,0 +1,125 @@
+{
+  "updated": "2026-11-02",
+  "departments": {
+    "ai-ceo": {
+      "status": "ready",
+      "progress": 100,
+      "risk": "low",
+      "note": "Executive oversight complete, all governance in place",
+      "owner": "ai-ceo",
+      "icon": "brain",
+      "statusIcon": "working",
+      "animation": "idle"
+    },
+    "ai-strategy": {
+      "status": "in-progress",
+      "progress": 75,
+      "risk": "medium",
+      "note": "Roadmap nearly complete, awaiting market validation",
+      "owner": "ai-strategy",
+      "icon": "brain",
+      "statusIcon": "thinking",
+      "animation": "thinking"
+    },
+    "ai-sales": {
+      "status": "in-progress",
+      "progress": 60,
+      "risk": "medium",
+      "note": "Pipeline building, lead conversion improving",
+      "owner": "ai-sales",
+      "icon": "chart",
+      "statusIcon": "working",
+      "animation": "walking"
+    },
+    "ai-finance": {
+      "status": "ready",
+      "progress": 100,
+      "risk": "low",
+      "note": "Budget finalized, forecasting aligned with strategy",
+      "owner": "ai-finance",
+      "icon": "calculator",
+      "statusIcon": "working",
+      "animation": "idle"
+    },
+    "ai-hr": {
+      "status": "in-progress",
+      "progress": 50,
+      "risk": "medium",
+      "note": "Onboarding design complete, hiring pipeline active",
+      "owner": "ai-hr",
+      "icon": "people",
+      "statusIcon": "thinking",
+      "animation": "thinking"
+    },
+    "ai-operations": {
+      "status": "ready",
+      "progress": 100,
+      "risk": "low",
+      "note": "SOPs in place, SLA monitoring active",
+      "owner": "ai-operations",
+      "icon": "cogs",
+      "statusIcon": "working",
+      "animation": "idle"
+    },
+    "ai-marketing": {
+      "status": "in-progress",
+      "progress": 40,
+      "risk": "medium",
+      "note": "Brand refresh in progress, content pipeline building",
+      "owner": "ai-marketing",
+      "icon": "megaphone",
+      "statusIcon": "working",
+      "animation": "walking"
+    },
+    "ai-it-data": {
+      "status": "ready",
+      "progress": 100,
+      "risk": "low",
+      "note": "Infrastructure stable, pipelines operational",
+      "owner": "ai-it-data",
+      "icon": "server",
+      "statusIcon": "working",
+      "animation": "idle"
+    },
+    "ai-legal": {
+      "status": "ready",
+      "progress": 100,
+      "risk": "low",
+      "note": "Compliance framework established, contracts reviewed",
+      "owner": "ai-legal",
+      "icon": "scales",
+      "statusIcon": "working",
+      "animation": "idle"
+    },
+    "ai-research": {
+      "status": "in-progress",
+      "progress": 80,
+      "risk": "low",
+      "note": "Market analysis underway, competitive scan complete",
+      "owner": "ai-research",
+      "icon": "magnifying-glass",
+      "statusIcon": "working",
+      "animation": "walking"
+    },
+    "ai-support": {
+      "status": "ready",
+      "progress": 100,
+      "risk": "low",
+      "note": "Support system live, SLA compliance tracked",
+      "owner": "ai-support",
+      "icon": "headset",
+      "statusIcon": "working",
+      "animation": "idle"
+    },
+    "ai-admin": {
+      "status": "ready",
+      "progress": 100,
+      "risk": "low",
+      "note": "Scheduling and coordination hub operational",
+      "owner": "ai-admin",
+      "icon": "calendar",
+      "statusIcon": "working",
+      "animation": "idle"
+    }
+  }
+}
