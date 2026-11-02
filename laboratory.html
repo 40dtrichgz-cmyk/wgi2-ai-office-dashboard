@@ -45,12 +45,52 @@
       line-height: 1.5;
     }
     canvas { display: block; }
+
+    /* Tooltip overlay */
+    #tooltip {
+      position: absolute;
+      pointer-events: none;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      min-width: 210px;
+      max-width: 270px;
+      background: rgba(8, 12, 22, 0.94);
+      border: 1px solid rgba(34, 211, 238, 0.4);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #e2e8f0;
+      font-size: 12px;
+      line-height: 1.55;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55);
+      transform: translate(0, 8px);
+    }
+    #tooltip.show { opacity: 1; transform: translate(0, 0); }
+    #tooltip .t-title { font-size: 14.5px; font-weight: 800; color: #fff; margin-bottom: 2px; letter-spacing: 0.02em; }
+    #tooltip .t-sub { font-size: 11px; color: #22d3ee; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.08em; }
+    #tooltip .t-desc { color: #94a3b8; margin-bottom: 10px; line-height: 1.5; }
+    #tooltip .t-skills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    #tooltip .t-skill {
+      font-size: 9.5px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(34, 211, 238, 0.14);
+      color: #22d3ee;
+      border: 1px solid rgba(34, 211, 238, 0.35);
+    }
+    #tooltip .t-skill.gold {
+      background: rgba(251, 191, 36, 0.18);
+      color: #fbbf24;
+      border-color: rgba(251, 191, 36, 0.45);
+    }
   </style>
 </head>
 <body>
   <div id="ui">
     <div class="badge">WGI AI Laboratory · DEMO MODE · Liquid Glass 3D</div>
-    <div class="hint">Orbit: drag · Zoom: scroll · Click a workstation to inspect · CEO workstation glows gold</div>
+    <div id="tooltip"></div>
+    <div class="hint">Orbit: drag · Zoom: scroll · Hover a person to see role, duties &amp; skills</div>
   </div>
   <script type="importmap">
     {
@@ -63,14 +103,15 @@
   <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    THREE.SphereGeometry = THREE.SphereGeometry;
 
     /* ================= CONFIG ================= */
     const CONFIG = {
-      roomSize: 46,
-      wallHeight: 14,
+      roomSize: 60,
+      wallHeight: 16,
       floorY: 0,
       glassColor: 0x8ef7ff,
-      glassOpacity: 0.12,
+      glassOpacity: 0.10,
       accentCyan: 0x22d3ee,
       accentGold: 0xfbbf24,
       deepNavy: 0x050a14,
@@ -81,70 +122,70 @@
     /* ================= SCENE ================= */
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x05070a);
-    scene.fog = new THREE.FogExp2(0x05070a, 0.035);
+    scene.fog = new THREE.FogExp2(0x05070a, 0.032);
 
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
-    // Isometric-ish high angle like the reference image
-    camera.position.set(0, 22, 30);
-    camera.lookAt(0, 2, 0);
+    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 220);
+    // Isometric high angle like reference image
+    camera.position.set(0, 28, 36);
+    camera.lookAt(0, 2.5, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.2;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.06;
-    controls.minDistance = 12;
-    controls.maxDistance = 70;
-    controls.maxPolarAngle = Math.PI / 2 - 0.05;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 14;
+    controls.maxDistance = 80;
+    controls.maxPolarAngle = Math.PI / 2 - 0.04;
 
     /* ================= LIGHTS ================= */
-    const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambient);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    keyLight.position.set(12, 18, 8);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    keyLight.position.set(14, 20, 10);
     keyLight.castShadow = true;
     keyLight.shadow.mapSize.width = 2048;
     keyLight.shadow.mapSize.height = 2048;
     keyLight.shadow.camera.near = 0.5;
-    keyLight.shadow.camera.far = 60;
-    keyLight.shadow.camera.left = -22;
-    keyLight.shadow.camera.right = 22;
-    keyLight.shadow.camera.top = 22;
-    keyLight.shadow.camera.bottom = -22;
+    keyLight.shadow.camera.far = 80;
+    keyLight.shadow.camera.left = -30;
+    keyLight.shadow.camera.right = 30;
+    keyLight.shadow.camera.top = 30;
+    keyLight.shadow.camera.bottom = -30;
     scene.add(keyLight);
 
-    const fillLight = new THREE.PointLight(0x22d3ee, 2.2, 40);
-    fillLight.position.set(-14, 6, 8);
+    const fillLight = new THREE.PointLight(0x22d3ee, 2.0, 50);
+    fillLight.position.set(-16, 7, 10);
     scene.add(fillLight);
 
-    const rimLight = new THREE.SpotLight(0xffffff, 1.5, 60, 0.45, 0.5, 1);
-    rimLight.position.set(0, 20, -14);
-    rimLight.target.position.set(0, 2, 0);
+    const rimLight = new THREE.SpotLight(0xffffff, 1.6, 70, 0.45, 0.5, 1);
+    rimLight.position.set(0, 22, -16);
+    rimLight.target.position.set(0, 2.5, 0);
     rimLight.castShadow = true;
     scene.add(rimLight);
     scene.add(rimLight.target);
 
-    const ceoGlow = new THREE.PointLight(0xfbbf24, 4, 25);
-    ceoGlow.position.set(0, 6, 0);
+    const ceoGlow = new THREE.PointLight(0xfbbf24, 5, 35);
+    ceoGlow.position.set(0, 7, -6);
     scene.add(ceoGlow);
 
     /* ================= MATERIALS ================= */
     const glassMat = new THREE.MeshPhysicalMaterial({
       color: CONFIG.glassColor,
-      metalness: 0.35,
-      roughness: 0.12,
-      transmission: 0.92,
+      metalness: 0.3,
+      roughness: 0.1,
+      transmission: 0.93,
       transparent: true,
       opacity: CONFIG.glassOpacity,
-      thickness: 0.6,
+      thickness: 0.7,
       clearcoat: 1.0,
       clearcoatRoughness: 0.1,
       side: THREE.DoubleSide
@@ -152,9 +193,9 @@
 
     const frostedMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
-      metalness: 0.25,
-      roughness: 0.55,
-      transmission: 0.55,
+      metalness: 0.2,
+      roughness: 0.5,
+      transmission: 0.6,
       transparent: true,
       opacity: 0.35,
       thickness: 0.9,
@@ -164,21 +205,21 @@
 
     const floorMat = new THREE.MeshStandardMaterial({
       color: 0x0a0e18,
-      roughness: 0.55,
-      metalness: 0.45
+      roughness: 0.5,
+      metalness: 0.5
     });
 
     const deskMat = new THREE.MeshStandardMaterial({
       color: 0x0f172a,
-      roughness: 0.35,
-      metalness: 0.65
+      roughness: 0.3,
+      metalness: 0.7
     });
 
     const glassPanelMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
-      metalness: 0.4,
-      roughness: 0.1,
-      transmission: 0.6,
+      metalness: 0.35,
+      roughness: 0.08,
+      transmission: 0.65,
       transparent: true,
       opacity: 0.55,
       thickness: 0.35,
@@ -189,7 +230,7 @@
     const neonMat = new THREE.MeshStandardMaterial({
       color: CONFIG.accentCyan,
       emissive: CONFIG.accentCyan,
-      emissiveIntensity: 2.5,
+      emissiveIntensity: 2.2,
       roughness: 0.1,
       metalness: 0.2
     });
@@ -197,22 +238,26 @@
     const goldMat = new THREE.MeshStandardMaterial({
       color: CONFIG.accentGold,
       emissive: CONFIG.accentGold,
-      emissiveIntensity: 1.8,
-      roughness: 0.25,
-      metalness: 0.85
+      emissiveIntensity: 2.0,
+      roughness: 0.2,
+      metalness: 0.9
     });
 
-    const personMat = new THREE.MeshStandardMaterial({
+    const suitMat = new THREE.MeshStandardMaterial({
       color: 0x1e293b,
-      roughness: 0.55,
-      metalness: 0.35
+      roughness: 0.45,
+      metalness: 0.5
     });
 
-    const ceoPersonMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
+    const ceoSuitMat = new THREE.MeshStandardMaterial({
+      color: 0x0b0d14,
       roughness: 0.35,
-      metalness: 0.55
+      metalness: 0.7
     });
+
+    const shirtMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.6 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xe9a486, roughness: 0.7 });
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.8 });
 
     /* ================= HELPERS ================= */
     function glassBox(w, h, d, mat = glassMat, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, cast = false, receive = false) {
@@ -237,7 +282,7 @@
       return mesh;
     }
 
-    function neonRect(w, h, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, color = CONFIG.accentCyan, intensity = 2.5) {
+    function neonRect(w, h, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, color = CONFIG.accentCyan, intensity = 2.2) {
       const geo = new THREE.PlaneGeometry(w, h);
       const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: intensity, transparent: true, opacity: 0.9 });
       const mesh = new THREE.Mesh(geo, mat);
@@ -249,87 +294,133 @@
       return mesh;
     }
 
+    // More detailed human character: head + hair + suit + shirt + arms + legs
     function person(x = 0, y = 0.85, z = 0, ceo = false, color = CONFIG.accentCyan, scale = 1) {
       const group = new THREE.Group();
       group.position.set(x, y, z);
       group.scale.setScalar(scale);
       scene.add(group);
 
-      // Head
-      const headGeo = new THREE.CapsuleGeometry(0.32, 0.25, 8, 16);
-      const headMat = ceo ? ceoPersonMat : personMat;
-      const head = new THREE.Mesh(headGeo, headMat);
-      head.position.y = 1.05;
+      // --- Head ---
+      const headGroup = new THREE.Group();
+      headGroup.position.y = 1.02;
+      group.add(headGroup);
+
+      const headGeo = new THREE.SphereGeometry(0.3, 16, 16);
+      const head = new THREE.Mesh(headGeo, skinMat);
       head.castShadow = true;
       head.receiveShadow = true;
-      group.add(head);
+      headGroup.add(head);
 
-      // Body (blazer / suit)
-      const bodyGeo = new THREE.CapsuleGeometry(0.42, 0.6, 8, 16);
-      bodyGeo.rotateX(Math.PI / 2);
-      const body = new THREE.Mesh(bodyGeo, headMat);
-      body.position.y = 0.35;
-      body.castShadow = true;
-      body.receiveShadow = true;
-      group.add(body);
+      // Hair
+      const hairGeo = new THREE.SphereGeometry(0.32, 16, 16);
+      const hair = new THREE.Mesh(hairGeo, hairMat);
+      hair.scale.set(1, 0.85, 1);
+      hair.position.y = 0.08;
+      hair.position.z = 0.06;
+      headGroup.add(hair);
 
-      // Arms
-      const armGeo = new THREE.CylinderGeometry(0.14, 0.11, 0.75, 8);
-      const armL = new THREE.Mesh(armGeo, headMat);
-      armL.position.set(-0.52, 0.3, 0);
-      armL.rotation.z = -0.35;
+      // --- Suit / Body ---
+      const bodyGroup = new THREE.Group();
+      bodyGroup.position.y = 0.25;
+      group.add(bodyGroup);
+
+      const torsoGeo = new THREE.BoxGeometry(0.44, 0.72, 0.3);
+      const torso = new THREE.Mesh(torsoGeo, ceo ? ceoSuitMat : suitMat);
+      torso.position.y = 0.05;
+      torso.castShadow = true;
+      torso.receiveShadow = true;
+      bodyGroup.add(torso);
+
+      // Shirt collar
+      const collarGeo = new THREE.BoxGeometry(0.32, 0.18, 0.16);
+      const collar = new THREE.Mesh(collarGeo, shirtMat);
+      collar.position.set(0, 0.42, 0.17);
+      bodyGroup.add(collar);
+
+      // Tie (CEO gold, others cyan)
+      const tieGeo = new THREE.BoxGeometry(0.07, 0.22, 0.03);
+      const tieMat = new THREE.MeshStandardMaterial({ color: ceo ? CONFIG.accentGold : CONFIG.accentCyan, emissive: ceo ? CONFIG.accentGold : CONFIG.accentCyan, emissiveIntensity: 1.2 });
+      const tie = new THREE.Mesh(tieGeo, tieMat);
+      tie.position.set(0, 0.3, 0.2);
+      bodyGroup.add(tie);
+
+      // --- Arms ---
+      const armGeo = new THREE.CylinderGeometry(0.12, 0.09, 0.7, 8);
+      const armL = new THREE.Mesh(armGeo, suitMat);
+      armL.position.set(-0.5, 0.1, 0);
+      armL.rotation.z = -0.3;
       armL.castShadow = true;
       group.add(armL);
 
-      const armR = new THREE.Mesh(armGeo, headMat);
-      armR.position.set(0.52, 0.3, 0);
-      armR.rotation.z = 0.35;
+      const armR = new THREE.Mesh(armGeo, suitMat);
+      armR.position.set(0.5, 0.1, 0);
+      armR.rotation.z = 0.3;
       armR.castShadow = true;
       group.add(armR);
 
-      // Legs
-      const legGeo = new THREE.CylinderGeometry(0.16, 0.13, 0.78, 8);
-      const legL = new THREE.Mesh(legGeo, headMat);
-      legL.position.set(-0.22, -0.35, 0);
+      // Hands
+      const handGeo = new THREE.SphereGeometry(0.09, 8, 8);
+      const handL = new THREE.Mesh(handGeo, skinMat);
+      handL.position.set(-0.62, -0.22, 0);
+      group.add(handL);
+      const handR = new THREE.Mesh(handGeo, skinMat);
+      handR.position.set(0.62, -0.22, 0);
+      group.add(handR);
+
+      // --- Legs ---
+      const legGeo = new THREE.CylinderGeometry(0.13, 0.11, 0.85, 8);
+      const legL = new THREE.Mesh(legGeo, suitMat);
+      legL.position.set(-0.16, -0.5, 0);
       legL.castShadow = true;
       group.add(legL);
 
-      const legR = new THREE.Mesh(legGeo, headMat);
-      legR.position.set(0.22, -0.35, 0);
+      const legR = new THREE.Mesh(legGeo, suitMat);
+      legR.position.set(0.16, -0.5, 0);
       legR.castShadow = true;
       group.add(legR);
 
-      // Department accent chip on chest
-      const chipGeo = new THREE.BoxGeometry(0.16, 0.16, 0.04);
+      // Shoes
+      const shoeGeo = new THREE.BoxGeometry(0.18, 0.08, 0.28);
+      const shoeMat = new THREE.MeshStandardMaterial({ color: 0x020617 });
+      const shoeL = new THREE.Mesh(shoeGeo, shoeMat);
+      shoeL.position.set(-0.16, -0.98, 0.12);
+      group.add(shoeL);
+      const shoeR = new THREE.Mesh(shoeGeo, shoeMat);
+      shoeR.position.set(0.16, -0.98, 0.12);
+      group.add(shoeR);
+
+      // Department accent chip on left chest
+      const chipGeo = new THREE.BoxGeometry(0.15, 0.15, 0.04);
       const chipMat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 2, transparent: true, opacity: 0.9 });
       const chip = new THREE.Mesh(chipGeo, chipMat);
-      chip.position.set(0, 0.05, 0.44);
-      group.add(chip);
+      chip.position.set(-0.18, 0.28, 0.22);
+      bodyGroup.add(chip);
 
-      // CEO crown / halo marker
+      // CEO halo / crown
       if (ceo) {
-        const haloGeo = new THREE.TorusGeometry(0.5, 0.05, 8, 24);
+        const haloGeo = new THREE.TorusGeometry(0.55, 0.05, 8, 28);
         const halo = new THREE.Mesh(haloGeo, goldMat);
-        halo.position.y = 1.6;
+        halo.position.y = 1.75;
         halo.rotation.x = Math.PI / 2;
         group.add(halo);
 
-        const sashGeo = new THREE.BoxGeometry(0.1, 1.6, 0.06);
+        const sashGeo = new THREE.BoxGeometry(0.1, 1.7, 0.06);
         const sash = new THREE.Mesh(sashGeo, goldMat);
-        sash.position.set(0, 0.4, 0.46);
-        group.add(sash);
+        sash.position.set(0, 0.45, 0.24);
+        bodyGroup.add(sash);
       }
 
       return group;
     }
 
-    function chair(x = 0, y = 0.6, z = 0, rotY = 0) {
+    function chair(x = 0, y = 0.55, z = 0, rotY = 0) {
       const group = new THREE.Group();
       group.position.set(x, y, z);
       group.rotation.y = rotY;
       scene.add(group);
 
-      const seatGeo = new THREE.BoxGeometry(0.6, 0.12, 0.55);
+      const seatGeo = new THREE.BoxGeometry(0.62, 0.12, 0.55);
       const seatMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8, metalness: 0.2 });
       const seat = new THREE.Mesh(seatGeo, seatMat);
       seat.position.y = 0.42;
@@ -343,9 +434,9 @@
       back.castShadow = true;
       group.add(back);
 
-      const legGeo = new THREE.BoxGeometry(0.07, 0.42, 0.07);
+      const legGeo = new THREE.BoxGeometry(0.06, 0.42, 0.06);
       const legMat = new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.9 });
-      const positions = [[-0.24, 0.21, 0.21], [0.24, 0.21, 0.21], [-0.24, 0.21, -0.21], [0.24, 0.21, -0.21]];
+      const positions = [[-0.25, 0.21, 0.2], [0.25, 0.21, 0.2], [-0.25, 0.21, -0.2], [0.25, 0.21, -0.2]];
       positions.forEach(([lx, ly, lz]) => {
         const leg = new THREE.Mesh(legGeo, legMat);
         leg.position.set(lx, ly, lz);
@@ -364,14 +455,14 @@
 
       const topGeo = new THREE.BoxGeometry(w, 0.35, d);
       const top = new THREE.Mesh(topGeo, deskMat);
-      top.position.y = 0.9;
+      top.position.y = 0.92;
       top.castShadow = true;
       top.receiveShadow = true;
       group.add(top);
 
-      const legGeo = new THREE.BoxGeometry(0.1, 0.9, 0.1);
+      const legGeo = new THREE.BoxGeometry(0.1, 0.92, 0.1);
       const legMat = new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.9 });
-      const legPos = [[-w / 2 + 0.2, 0.45, -d / 2 + 0.2], [w / 2 - 0.2, 0.45, -d / 2 + 0.2], [-w / 2 + 0.2, 0.45, d / 2 - 0.2], [w / 2 - 0.2, 0.45, d / 2 - 0.2]];
+      const legPos = [[-w / 2 + 0.2, 0.46, -d / 2 + 0.2], [w / 2 - 0.2, 0.46, -d / 2 + 0.2], [-w / 2 + 0.2, 0.46, d / 2 - 0.2], [w / 2 - 0.2, 0.46, d / 2 - 0.2]];
       legPos.forEach(([lx, ly, lz]) => {
         const leg = new THREE.Mesh(legGeo, legMat);
         leg.position.set(lx, ly, lz);
@@ -380,29 +471,54 @@
       });
 
       if (withMonitor) {
-        const monGeo = new THREE.BoxGeometry(1.1, 0.9, 0.12);
+        const monGeo = new THREE.BoxGeometry(1.2, 1, 0.12);
         const monMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.8 });
         const mon = new THREE.Mesh(monGeo, monMat);
-        mon.position.set(0, 1.45, 0.1);
+        mon.position.set(0, 1.5, 0.1);
         mon.castShadow = true;
         group.add(mon);
 
-        const screenGeo = new THREE.PlaneGeometry(0.98, 0.78);
-        const screenMat = neonMat;
-        const screen = new THREE.Mesh(screenGeo, screenMat);
-        screen.position.set(0, 1.45, 0.07);
+        const screenGeo = new THREE.PlaneGeometry(1.05, 0.82);
+        const screen = new THREE.Mesh(screenGeo, neonMat);
+        screen.position.set(0, 1.5, 0.07);
         group.add(screen);
 
-        const kbGeo = new THREE.BoxGeometry(0.9, 0.04, 0.45);
+        const kbGeo = new THREE.BoxGeometry(1, 0.04, 0.5);
         const kb = new THREE.Mesh(kbGeo, new THREE.MeshStandardMaterial({ color: 0x020617 }));
-        kb.position.set(0, 0.98, -0.6);
+        kb.position.set(0, 1, -0.65);
         group.add(kb);
+
+        // Mouse
+        const mouseGeo = new THREE.BoxGeometry(0.12, 0.04, 0.2);
+        const mouse = new THREE.Mesh(mouseGeo, new THREE.MeshStandardMaterial({ color: 0x020617 }));
+        mouse.position.set(0.35, 1, -0.55);
+        group.add(mouse);
       }
 
       return group;
     }
 
-    function hologram(x = 0, y = 0, z = 0, w = 3, h = 3, text = 'AI', rotY = 0, color = CONFIG.accentCyan) {
+    function departmentSign(x, y, z, text, color, rotY, isCEO = false) {
+      const group = new THREE.Group();
+      group.position.set(x, y, z);
+      group.rotation.y = rotY;
+      scene.add(group);
+
+      const w = isCEO ? 3.2 : 2;
+      const h = isCEO ? 1.1 : 0.7;
+      const frameGeo = new THREE.PlaneGeometry(w, h);
+      const frame = new THREE.Mesh(frameGeo, glassPanelMat);
+      frame.position.y = h / 2;
+      frame.castShadow = false;
+      group.add(frame);
+
+      const glow = neonRect(w * 0.78, h * 0.6, 0, h / 2, 0.03, 0, rotY, color, 2);
+      group.add(glow);
+
+      return group;
+    }
+
+    function hologram(x, y, z, w, h, text, rotY, color) {
       const group = new THREE.Group();
       group.position.set(x, y, z);
       group.rotation.y = rotY;
@@ -414,10 +530,25 @@
       frame.castShadow = false;
       group.add(frame);
 
-      const glow = neonRect(w * 0.85, h * 0.85, 0, h / 2, 0.04, 0, rotY, color, 3);
+      const glow = neonRect(w * 0.82, h * 0.82, 0, h / 2, 0.04, 0, rotY, color, 2.6);
       group.add(glow);
 
       return group;
+    }
+
+    function plant(x, z, s = 1) {
+      const group = new THREE.Group();
+      group.position.set(x, 0.5, z);
+      group.scale.setScalar(s);
+      scene.add(group);
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.4, 16), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+      pot.position.y = 0.2;
+      pot.castShadow = true;
+      group.add(pot);
+      const leaves = new THREE.Mesh(new THREE.ConeGeometry(0.85, 1.5, 8), new THREE.MeshStandardMaterial({ color: 0x10b981 }));
+      leaves.position.y = 1.0;
+      leaves.castShadow = true;
+      group.add(leaves);
     }
 
     /* ================= BUILD OFFICE ================= */
@@ -427,53 +558,54 @@
     floor.receiveShadow = true;
     scene.add(floor);
 
-    // Floor grid accents
-    const gridHelper = new THREE.GridHelper(CONFIG.roomSize, 24, 0x1e293b, 0x0f172a);
+    const gridHelper = new THREE.GridHelper(CONFIG.roomSize, 30, 0x1e293b, 0x0f172a);
     gridHelper.position.y = 0.01;
     scene.add(gridHelper);
 
-    // Glass walls (back, left, right)
-    const wallBack = glassBox(CONFIG.roomSize, CONFIG.wallHeight, 0.12, glassMat, 0, CONFIG.wallHeight / 2, -CONFIG.roomSize / 2);
-    const wallLeft = glassBox(0.12, CONFIG.wallHeight, CONFIG.roomSize, glassMat, -CONFIG.roomSize / 2, CONFIG.wallHeight / 2, 0, 0, 0, 0);
-    const wallRight = glassBox(0.12, CONFIG.wallHeight, CONFIG.roomSize, glassMat, CONFIG.roomSize / 2, CONFIG.wallHeight / 2, 0, 0, 0, 0);
-
-    // Glass ceiling
+    // Glass walls
+    glassBox(CONFIG.roomSize, CONFIG.wallHeight, 0.12, glassMat, 0, CONFIG.wallHeight / 2, -CONFIG.roomSize / 2);
+    glassBox(0.12, CONFIG.wallHeight, CONFIG.roomSize, glassMat, -CONFIG.roomSize / 2, CONFIG.wallHeight / 2, 0);
+    glassBox(0.12, CONFIG.wallHeight, CONFIG.roomSize, glassMat, CONFIG.roomSize / 2, CONFIG.wallHeight / 2, 0);
     const ceiling = glassBox(CONFIG.roomSize, 0.12, CONFIG.roomSize, frostedMat, 0, CONFIG.wallHeight - 0.06, 0);
 
-    // Glass partitions inside
-    glassPlane(12, 7, glassPanelMat, -12, 4, -6, 0, Math.PI / 4);
-    glassPlane(12, 7, glassPanelMat, 12, 4, -6, 0, -Math.PI / 4);
-    glassPlane(10, 6, glassPanelMat, 0, 4, 8, 0, Math.PI / 2);
+    // Internal glass partitions
+    glassPlane(14, 8, glassPanelMat, -16, 5, -8, 0, 0.4);
+    glassPlane(14, 8, glassPanelMat, 16, 5, -8, 0, -0.4);
+    glassPlane(12, 7, glassPanelMat, 0, 5, 14, 0, Math.PI / 2);
 
     /* ================= DEPARTMENTS ================= */
-    // Layout based on reference image: isometric floor plan with 12 departments
+    // Layout: CEO at BACK center, other departments arranged in rows with clear spacing
     const depts = [
-      { id: 'ai-ceo', name: 'CEO', pos: [0, 0.35, 2], rot: 0, color: CONFIG.accentGold, isCEO: true, deskW: 4.2, deskD: 3 },
-      { id: 'ai-strategy', name: 'Strategy', pos: [-6, 0.35, -4], rot: Math.PI / 4, color: 0x34d399, isCEO: false, deskW: 2.8, deskD: 2 },
-      { id: 'ai-sales', name: 'Sales', pos: [6, 0.35, -4], rot: -Math.PI / 4, color: 0x64748b, isCEO: false, deskW: 2.8, deskD: 2 },
-      { id: 'ai-finance', name: 'Finance', pos: [0, 0.35, -8], rot: 0, color: 0x1e90ff, isCEO: false, deskW: 2.8, deskD: 2 },
-      { id: 'ai-hr', name: 'HR', pos: [-7, 0.35, -10], rot: Math.PI / 6, color: 0xff6b6b, isCEO: false, deskW: 2.4, deskD: 1.8 },
-      { id: 'ai-operations', name: 'Operations', pos: [7, 0.35, -10], rot: -Math.PI / 6, color: 0x888888, isCEO: false, deskW: 2.4, deskD: 1.8 },
-      { id: 'ai-marketing', name: 'Marketing', pos: [-9, 0.35, 2], rot: Math.PI / 3, color: 0xf7931e, isCEO: false, deskW: 2.8, deskD: 2 },
-      { id: 'ai-it-data', name: 'IT & Data', pos: [9, 0.35, 2], rot: -Math.PI / 3, color: 0x00ced1, isCEO: false, deskW: 2.8, deskD: 2 },
-      { id: 'ai-legal', name: 'Legal', pos: [-4, 0.35, 6], rot: Math.PI / 2, color: 0x9b59b6, isCEO: false, deskW: 2.4, deskD: 1.8 },
-      { id: 'ai-research', name: 'Research', pos: [4, 0.35, 6], rot: -Math.PI / 2, color: 0x2c3e50, isCEO: false, deskW: 2.4, deskD: 1.8 },
-      { id: 'ai-support', name: 'Support', pos: [-1, 0.35, 10], rot: Math.PI, color: 0x34495e, isCEO: false, deskW: 2.8, deskD: 2 },
-      { id: 'ai-admin', name: 'Admin', pos: [0, 0.35, -13], rot: 0, color: 0x7f8c8d, isCEO: false, deskW: 3, deskD: 2.2 }
+      // Row back (CEO center)
+      { id: 'ai-ceo', name: 'CEO', title: 'AI CEO', desc: 'Executive oversight, final decisions, governance', pos: [0, 0.35, -14], rot: 0, color: CONFIG.accentGold, isCEO: true, deskW: 5, deskD: 4, skills: ['Strategy','Governance','Budget Approval','Risk Management','Executive Summary'], row: 0 },
+      // Row 1 (left to right)
+      { id: 'ai-strategy', name: 'Strategy', title: 'AI Strategy Officer', desc: 'Business planning, growth roadmap, market positioning', pos: [-22, 0.35, -6], rot: Math.PI / 6, color: 0x34d399, isCEO: false, deskW: 3, deskD: 2.2, skills: ['Roadmap','OKR','Market Analysis','Scenario Planning'], row: 1 },
+      { id: 'ai-finance', name: 'Finance', title: 'AI Finance Lead', desc: 'Budgeting, financial modeling, cost analysis', pos: [-11, 0.35, -6], rot: Math.PI / 8, color: 0x1e90ff, isCEO: false, deskW: 3, deskD: 2.2, skills: ['Budgeting','Forecasting','ROI','Cash Flow','Financial Modeling'], row: 1 },
+      { id: 'ai-hr', name: 'HR', title: 'AI HR Lead', desc: 'Talent acquisition, onboarding, culture, performance', pos: [0, 0.35, -6], rot: 0, color: 0xff6b6b, isCEO: false, deskW: 2.6, deskD: 2, skills: ['Recruiting','Onboarding','Performance','Culture','Policy'], row: 1 },
+      { id: 'ai-operations', name: 'Operations', title: 'AI Operations Lead', desc: 'SOPs, SLA monitoring, process efficiency', pos: [11, 0.35, -6], rot: -Math.PI / 8, color: 0x888888, isCEO: false, deskW: 3, deskD: 2.2, skills: ['SOP','SLA','KPI','Process','Automation'], row: 1 },
+      { id: 'ai-sales', name: 'Sales', title: 'AI Sales Lead', desc: 'Pipeline management, lead conversion, quota tracking', pos: [22, 0.35, -6], rot: -Math.PI / 6, color: 0x64748b, isCEO: false, deskW: 3, deskD: 2.2, skills: ['CRM','Pipeline','Quota','Forecasting','Negotiation'], row: 1 },
+      // Row 2
+      { id: 'ai-marketing', name: 'Marketing', title: 'AI Marketing Lead', desc: 'Brand positioning, campaigns, content creation', pos: [-22, 0.35, 2], rot: Math.PI / 6, color: 0xf7931e, isCEO: false, deskW: 3, deskD: 2.2, skills: ['Brand','Campaigns','Content','SEO','Analytics'], row: 2 },
+      { id: 'ai-it-data', name: 'IT & Data', title: 'AI IT & Data Lead', desc: 'Infrastructure, data pipelines, DevOps, security', pos: [-11, 0.35, 2], rot: Math.PI / 8, color: 0x00ced1, isCEO: false, deskW: 3, deskD: 2.2, skills: ['Infrastructure','Data Pipeline','DevOps','Security','CI/CD'], row: 2 },
+      { id: 'ai-legal', name: 'Legal', title: 'AI Legal Lead', desc: 'Compliance, contracts, regulatory adherence', pos: [0, 0.35, 2], rot: 0, color: 0x9b59b6, isCEO: false, deskW: 2.6, deskD: 2, skills: ['Contracts','Compliance','Risk','IP','Regulatory'], row: 2 },
+      { id: 'ai-research', name: 'Research', title: 'AI Research Lead', desc: 'Market research, competitive intelligence, analytics', pos: [11, 0.35, 2], rot: -Math.PI / 8, color: 0x2c3e50, isCEO: false, deskW: 3, deskD: 2.2, skills: ['Market Research','Competitive Intel','Analytics','Data Mining','Reports'], row: 2 },
+      { id: 'ai-support', name: 'Support', title: 'AI Support Lead', desc: 'Customer success, ticket resolution, feedback triage', pos: [22, 0.35, 2], rot: -Math.PI / 6, color: 0x34495e, isCEO: false, deskW: 3, deskD: 2.2, skills: ['Tickets','CSAT','Onboarding','Knowledge Base','Feedback'], row: 2 },
+      // Row front
+      { id: 'ai-admin', name: 'Admin', title: 'AI Admin Lead', desc: 'Scheduling, resource coordination, workflow hub', pos: [0, 0.35, 10], rot: Math.PI, color: 0x7f8c8d, isCEO: false, deskW: 3.4, deskD: 2.6, skills: ['Scheduling','Coordination','Workflow','Resources','Documentation'], row: 3 }
     ];
 
     const people = [];
 
+    // Sort: CEO last so rendered/placed last conceptually; CEO at back center
     depts.forEach(d => {
       // Glass department enclosure
-      const encW = d.isCEO ? 5 : 3.2;
-      const encD = d.isCEO ? 4 : 2.6;
-      const enc = glassBox(encW, 6, encD, glassMat, d.pos[0], 3, d.pos[1], 0, d.rot, 0);
+      const encW = d.isCEO ? 6 : 3.6;
+      const encD = d.isCEO ? 5 : 3;
+      const encH = d.isCEO ? 7 : 6;
+      glassBox(encW, encH, encD, glassMat, d.pos[0], encH / 2, d.pos[1], 0, d.rot, 0);
 
-      // Nameplate glass sign
-      const signW = d.isCEO ? 2.6 : 1.6;
-      const sign = glassPlane(signW, 0.9, glassPanelMat, d.pos[0], 5.6, d.pos[1], 0, d.rot, 0);
-      const signNeon = neonRect(signW * 0.75, 0.6, d.pos[0], 5.6, d.pos[1] + 0.03, 0, d.rot, 0, d.color, 2);
+      // Department sign above desk
+      departmentSign(d.pos[0], 4.6, d.pos[1], d.name, d.color, d.rot, d.isCEO);
 
       // Desk
       desk(d.pos[0], 0, d.pos[1], d.deskW, d.deskD, d.rot, true);
@@ -481,92 +613,140 @@
       // Chair
       chair(d.pos[0], 0.55, d.pos[1], d.rot);
 
-      // Person (CEO is larger, gold halo, central)
-      const p = person(d.pos[0], 0.9, d.pos[1], d.isCEO, d.color, d.isCEO ? 1.35 : 1);
-      people.push({ mesh: p, id: d.id, name: d.name, isCEO: d.isCEO, baseY: 0.9, color: d.color });
+      // Person behind desk
+      const p = person(d.pos[0], 0.95, d.pos[1], d.isCEO, d.color, d.isCEO ? 1.25 : 1);
+      people.push({ mesh: p, id: d.id, name: d.name, title: d.title, desc: d.desc, isCEO: d.isCEO, baseY: 0.95, color: d.color, skills: d.skills, rotY: d.rot });
 
       // Department hologram above desk
-      hologram(d.pos[0], 2.6, d.pos[1], d.isCEO ? 3.4 : 2.2, d.isCEO ? 3.4 : 2.2, d.isCEO ? 'CEO' : d.name.toUpperCase(), d.rot, d.color);
+      hologram(d.pos[0], 2.2, d.pos[1], d.isCEO ? 4 : 2.6, d.isCEO ? 4 : 2.6, d.isCEO ? 'CEO ROOM' : d.name.toUpperCase(), d.rot, d.color);
 
-      // Side seating for collaboration areas
+      // Guest chair opposite
       if (!d.isCEO) {
-        chair(d.pos[0] + (d.isCEO ? 0 : 1.1), 0.55, d.pos[1] + 1.1, d.rot + Math.PI);
+        chair(d.pos[0], 0.55, d.pos[1] + 1.6, d.rot + Math.PI);
       }
     });
 
-    // Central CEO feature table & halo platform
-    const ceoPlatform = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 0.4, 32), goldMat);
-    ceoPlatform.position.set(0, 0.2, 2);
+    // Central CEO feature platform (back)
+    const ceoPlatform = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.2, 0.5, 32), goldMat);
+    ceoPlatform.position.set(0, 0.25, -10);
     ceoPlatform.castShadow = true;
     scene.add(ceoPlatform);
 
-    const ceoHologram = new THREE.Mesh(new THREE.TorusKnotGeometry(1.1, 0.35, 100, 16), goldMat);
-    ceoHologram.position.set(0, 1.6, 2);
+    const ceoHologram = new THREE.Mesh(new THREE.TorusKnotGeometry(1.4, 0.45, 120, 20), goldMat);
+    ceoHologram.position.set(0, 1.9, -10);
     ceoHologram.castShadow = false;
     scene.add(ceoHologram);
 
-    // Decorative plants
-    function plant(x, z, s = 1) {
-      const group = new THREE.Group();
-      group.position.set(x, 0.55, z);
-      group.scale.setScalar(s);
-      scene.add(group);
-      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.4, 16), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
-      pot.position.y = 0.2;
-      pot.castShadow = true;
-      group.add(pot);
-      const leaves = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1.4, 8), new THREE.MeshStandardMaterial({ color: 0x10b981 }));
-      leaves.position.y = 0.95;
-      leaves.castShadow = true;
-      group.add(leaves);
-    }
-    plant(-14, -12, 1.1);
-    plant(14, -12, 1.1);
-    plant(-16, 8, 0.9);
-    plant(16, 8, 0.9);
+    // Plants at corners and rows
+    plant(-30, -30, 1.1);
+    plant(30, -30, 1.1);
+    plant(-32, 14, 0.9);
+    plant(32, 14, 0.9);
+    plant(-32, -12, 0.9);
+    plant(32, -12, 0.9);
 
     /* ================= HOLOGRAPHIC OVERLAYS ================= */
-    // Floating glass panels around the room
     const panels = [
-      { x: -20, y: 5, z: -4, w: 7, h: 5, ry: 0.3 },
-      { x: 20, y: 5, z: -4, w: 7, h: 5, ry: -0.3 },
-      { x: -14, y: 7, z: 14, w: 6, h: 4, ry: -0.8 },
-      { x: 14, y: 7, z: 14, w: 6, h: 4, ry: 0.8 },
-      { x: 0, y: 9, z: -22, w: 10, h: 6, ry: 0 }
+      { x: -32, y: 6, z: -10, w: 9, h: 6, ry: 0.3 },
+      { x: 32, y: 6, z: -10, w: 9, h: 6, ry: -0.3 },
+      { x: -26, y: 7, z: 16, w: 8, h: 5, ry: -0.9 },
+      { x: 26, y: 7, z: 16, w: 8, h: 5, ry: 0.9 },
+      { x: 0, y: 10, z: -34, w: 12, h: 7, ry: 0 }
     ];
     panels.forEach(p => {
       glassPlane(p.w, p.h, glassPanelMat, p.x, p.y, p.z, 0, p.ry, 0);
-      neonRect(p.w * 0.8, p.h * 0.8, p.x, p.y, p.z + 0.03, 0, p.ry, CONFIG.accentCyan, 1.5);
+      neonRect(p.w * 0.82, p.h * 0.82, p.x, p.y, p.z + 0.03, 0, p.ry, CONFIG.accentCyan, 1.4);
     });
+
+    /* ================= INTERACTION (HOVER TOOLTIP) ================= */
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const tooltip = document.getElementById('tooltip');
+    let hovered = null;
+
+    function setTooltip(html) {
+      if (!html) { tooltip.classList.remove('show'); tooltip.innerHTML = ''; return; }
+      tooltip.innerHTML = html;
+      tooltip.classList.add('show');
+    }
+
+    function positionTooltip(x, y) {
+      const w = window.innerWidth, h = window.innerHeight;
+      let tx = x + 18, ty = y + 18;
+      const tw = 270, th = 200;
+      if (tx + tw > w) tx = x - tw - 18;
+      if (ty + th > h) ty = y - th - 18;
+      tooltip.style.left = tx + 'px';
+      tooltip.style.top = ty + 'px';
+    }
+
+    function buildTooltipHTML(p) {
+      const skills = p.skills.map(s => `<span class="t-skill${p.isCEO ? ' gold' : ''}">${s}</span>`).join('');
+      return `
+        <div class="t-title">${p.title}</div>
+        <div class="t-sub">${p.name} Department</div>
+        <div class="t-desc">${p.desc}</div>
+        <div style="font-size:10px;color:#64748b;margin-bottom:6px;">SKILLS</div>
+        <div class="t-skills">${skills}</div>
+      `;
+    }
+
+    function onPointerMove(event) {
+      pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+
+      const hits = raycaster.intersectObjects(scene.children, true);
+      let found = null;
+      for (const hit of hits) {
+        let n = hit.object;
+        while (n && n !== scene) {
+          const p = people.find(x => x.mesh === n);
+          if (p) { found = p; break; }
+          n = n.parent;
+        }
+        if (found) break;
+      }
+
+      if (found !== hovered) {
+        hovered = found;
+        if (found) {
+          found.mesh.scale.setScalar(found.isCEO ? 1.25 : 1);
+          setTooltip(buildTooltipHTML(found));
+        } else {
+          setTooltip(null);
+        }
+      }
+      if (found) positionTooltip(event.clientX, event.clientY);
+    }
+
+    renderer.domElement.addEventListener('pointermove', onPointerMove);
+    renderer.domElement.addEventListener('pointerleave', () => { hovered = null; setTooltip(null); });
 
     /* ================= ANIMATION ================= */
     const clock = new THREE.Clock();
-    let mixerUpdate = () => {};
 
     function animate() {
       requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
-      const dt = clock.getDelta();
 
       controls.update();
 
-      // Gentle bobbing for people + subtle rotation
       people.forEach(p => {
-        const bob = Math.sin(t * 2 + p.mesh.position.x) * 0.04;
+        const bob = Math.sin(t * 2 + p.mesh.position.x) * 0.03;
         p.mesh.position.y = p.baseY + bob;
-        p.mesh.rotation.y = Math.sin(t * 0.5 + p.mesh.position.x) * 0.06;
+        p.mesh.rotation.y = p.rotY + Math.sin(t * 0.4 + p.mesh.position.x) * 0.04;
         if (p.isCEO) {
-          p.mesh.rotation.y = t * 0.15; // CEO rotates slowly
-          ceoGlow.intensity = 3 + Math.sin(t * 3) * 1;
-          ceoHologram.rotation.y = t * 0.4;
-          ceoHologram.rotation.x = t * 0.2;
+          p.mesh.rotation.y = p.rotY + t * 0.08;
+          ceoGlow.intensity = 4 + Math.sin(t * 3) * 1.2;
+          ceoHologram.rotation.y = t * 0.35;
+          ceoHologram.rotation.x = t * 0.18;
         }
       });
 
-      // Hologram pulses
       scene.traverse(obj => {
         if (obj.material && obj.material.emissiveIntensity !== undefined && obj.material.emissiveIntensity > 0) {
-          obj.material.emissiveIntensity = 2 + Math.sin(t * 4) * 0.6;
+          obj.material.emissiveIntensity = 2 + Math.sin(t * 3.5) * 0.5;
         }
       });
 
