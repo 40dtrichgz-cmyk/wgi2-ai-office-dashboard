@@ -110,6 +110,12 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+    // Verify THREE loaded correctly
+    if (!THREE || typeof THREE.Scene !== 'function') {
+      document.getElementById('error-msg').style.display = 'block';
+      document.getElementById('error-msg').textContent = 'Failed to load THREE library. Check your internet connection.';
+    }
+
     /* ================= CONFIG ================= */
     const CONFIG = {
       roomSize: 60,
