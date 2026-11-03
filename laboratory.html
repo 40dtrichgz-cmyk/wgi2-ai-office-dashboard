@@ -191,7 +191,7 @@
     scene.add(rimLight.target);
 
     const ceoGlow = new THREE.PointLight(0xfbbf24, 5, 35);
-    ceoGlow.position.set(0, 7, -6);
+    ceoGlow.position.set(0, 7, -16.45);
     scene.add(ceoGlow);
 
     /* ================= MATERIALS ================= */
@@ -683,23 +683,29 @@
       }
     });
 
-    // ========== Position person seated at desk + computer in front ==========
+    // ========== Position person seated at their OWN desk + computer in front ==========
+    // Each character is assigned to exactly one desk — no clustering at a central table.
     depts.forEach(d => {
       const person = scene.getObjectByName('character_' + d.id);
       const deskObj = scene.getObjectByName('desk_' + d.id);
 
       if (deskObj) {
-        // Keep desk at its original position (don't reset to 0,0,0)
         deskObj.scale.set(1, 1, 1);
       }
 
       if (person && deskObj) {
-        // Position person behind the desk (seated position)
+        // Desk local axes: +Z is "front" (monitor side), -Z is where the user sits (keyboard side).
+        // Place the person just behind their own desk, facing it.
+        const sitDepth = d.deskD / 2 + 0.45;
+        const dx = Math.sin(d.rot) * sitDepth;
+        const dz = Math.cos(d.rot) * sitDepth;
+
         person.position.set(
-          -0.8,
+          d.pos[0] + dx,
           0.95,
-          1.2
+          d.pos[1] - dz   // -Z side = keyboard/user side
         );
+        // Face the desk (toward +Z in desk local space)
         person.rotation.y = d.rot;
       }
 
@@ -752,14 +758,14 @@
       });
     });
 
-    // Central CEO feature platform (back)
+    // Central CEO feature platform (aligned with CEO desk at z=-14)
     const ceoPlatform = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.2, 0.5, 32), goldMat);
-    ceoPlatform.position.set(0, 0.25, -10);
+    ceoPlatform.position.set(0, 0.25, -14);
     ceoPlatform.castShadow = true;
     scene.add(ceoPlatform);
 
     const ceoHologram = new THREE.Mesh(new THREE.TorusKnotGeometry(1.4, 0.45, 120, 20), goldMat);
-    ceoHologram.position.set(0, 1.9, -10);
+    ceoHologram.position.set(0, 1.9, -14);
     ceoHologram.castShadow = false;
     scene.add(ceoHologram);
 
@@ -917,9 +923,9 @@
         delay: i * 0.1
       });
 
-      // Subtle rotation animation
+      // Subtle rotation animation (relative to current facing direction)
       gsap.to(p.mesh.rotation, {
-        y: p.rotY + 0.06,
+        y: "+=0.06",
         duration: 2 + Math.random(),
         repeat: -1,
         yoyo: true,
