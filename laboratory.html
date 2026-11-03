@@ -90,6 +90,7 @@
   <div id="ui">
     <div class="badge">WGI AI Laboratory · DEMO MODE · Liquid Glass 3D</div>
     <div id="error-msg" style="position:absolute; top:80px; left:24px; color:#ff6b6b; display:none; font-size:13px; max-width:80%; word-wrap:break-word;"></div>
+    <div id="sync-status" style="position:absolute; top:80px; right:24px; font-size:12px; color:#64748b; display:none;"></div>
     <div id="tooltip"></div>
     <div class="hint">Orbit: drag · Zoom: scroll · Hover a person to see role, duties &amp; skills</div>
   </div>
@@ -97,7 +98,8 @@
     {
       "imports": {
         "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+        "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/",
+        "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm"
       }
     }
   </script>
@@ -109,6 +111,7 @@
     });
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import gsap from 'gsap';
 
     // Verify THREE loaded correctly
     if (!THREE || typeof THREE.Scene !== 'function') {
@@ -685,6 +688,36 @@
       neonRect(p.w * 0.82, p.h * 0.82, p.x, p.y, p.z + 0.03, 0, p.ry, CONFIG.accentCyan, 1.4);
     });
 
+    /* ================= n8n LIVE SYNC ================= */
+    const syncStatus = document.getElementById('sync-status');
+    let syncTimer = null;
+
+    function fetchLiveStatus() {
+      fetch('/data/departments.json')
+        .then(r => r.json())
+        .then(data => {
+          syncStatus.style.display = 'block';
+          syncStatus.textContent = 'LIVE SYNC · ' + data.updated;
+          syncStatus.style.color = '#22d3ee';
+          people.forEach(p => {
+            const dept = data.departments[p.id];
+            if (dept) {
+              p.progress = dept.progress;
+              p.risk = dept.risk;
+            }
+          });
+        })
+        .catch(() => {
+          syncStatus.style.display = 'block';
+          syncStatus.textContent = 'LIVE SYNC · OFFLINE';
+          syncStatus.style.color = '#ff6b6b';
+        });
+    }
+
+    // Poll for live updates every 30 seconds
+    syncTimer = setInterval(fetchLiveStatus, 30000);
+    fetchLiveStatus();
+
     /* ================= INTERACTION (HOVER TOOLTIP) ================= */
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
@@ -709,12 +742,16 @@
 
     function buildTooltipHTML(p) {
       const skills = p.skills.map(s => `<span class="t-skill${p.isCEO ? ' gold' : ''}">${s}</span>`).join('');
+      const live = p.progress !== undefined ? `
+        <div style="margin-top:8px; font-size:10px; color:#64748b;">
+          PROGRESS: <span style="color:#22d3ee;">${p.progress}%</span> · RISK: <span style="color:${p.risk === 'high' || p.risk === 'critical' ? '#ff6b6b' : '#22d3ee'};">${p.risk}</span>
+        </div>` : '';
       return `
         <div class="t-title">${p.title}</div>
         <div class="t-sub">${p.name} Department</div>
         <div class="t-desc">${p.desc}</div>
         <div style="font-size:10px;color:#64748b;margin-bottom:6px;">SKILLS</div>
-        <div class="t-skills">${skills}</div>
+        <div class="t-skills">${skills}</div>${live}
       `;
     }
 
@@ -750,36 +787,88 @@
     renderer.domElement.addEventListener('pointermove', onPointerMove);
     renderer.domElement.addEventListener('pointerleave', () => { hovered = null; setTooltip(null); });
 
-    /* ================= ANIMATION ================= */
-    const clock = new THREE.Clock();
+    /* ================= ANIMATION (GSAP OPTIMIZED) ================= */
+    // character bobbing and rotation
+    people.forEach((p, i) => {
+      // Bobbing animation
+      gsap.to(p.mesh.position, {
+        y: p.baseY + 0.05,
+        duration: 1.5 + Math.random(),
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+        delay: i * 0.1
+      });
 
-    function animate() {
-      requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
+      // Subtle rotation animation
+      gsap.to(p.mesh.rotation, {
+        y: p.rotY + 0.06,
+        duration: 2 + Math.random(),
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+        delay: i * 0.15
+      });
+    });
 
+    // CEO Specific animations
+    const ceo = people.find(p => p.isCEO);
+    if (ceo) {
+      // CEO continuous rotation
+      gsap.to(ceo.mesh.rotation, {
+        y: "+=" + (Math.PI * 2),
+        duration: 20,
+        repeat: -1,
+        ease: "none"
+      });
+
+      // CEO Glow pulse
+      gsap.to(ceoGlow, {
+        intensity: 6,
+        duration: 1,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut"
+      });
+
+      // CEO Hologram rotation
+      gsap.to(ceoHologram.rotation, {
+        y: Math.PI * 2,
+        x: Math.PI,
+        duration: 8,
+        repeat: -1,
+        ease: "none"
+      });
+    }
+
+    // Global emissive pulse (holograms)
+    const emissiveObjects = [];
+    scene.traverse(obj => {
+      if (obj.material && obj.material.emissiveIntensity !== undefined && obj.material.emissiveIntensity > 0) {
+        emissiveObjects.push(obj.material);
+      }
+    });
+
+    if (emissiveObjects.length > 0) {
+      gsap.to(emissiveObjects, {
+        emissiveIntensity: 2.5,
+        duration: 1.2,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+        stagger: {
+          each: 0.05,
+          from: "random"
+        }
+      });
+    }
+
+    // Optimized Render Loop using GSAP Ticker
+    function render() {
       controls.update();
-
-      people.forEach(p => {
-        const bob = Math.sin(t * 2 + p.mesh.position.x) * 0.03;
-        p.mesh.position.y = p.baseY + bob;
-        p.mesh.rotation.y = p.rotY + Math.sin(t * 0.4 + p.mesh.position.x) * 0.04;
-        if (p.isCEO) {
-          p.mesh.rotation.y = p.rotY + t * 0.08;
-          ceoGlow.intensity = 4 + Math.sin(t * 3) * 1.2;
-          ceoHologram.rotation.y = t * 0.35;
-          ceoHologram.rotation.x = t * 0.18;
-        }
-      });
-
-      scene.traverse(obj => {
-        if (obj.material && obj.material.emissiveIntensity !== undefined && obj.material.emissiveIntensity > 0) {
-          obj.material.emissiveIntensity = 2 + Math.sin(t * 3.5) * 0.5;
-        }
-      });
-
       renderer.render(scene, camera);
     }
-    animate();
+    gsap.ticker.add(render);
 
     /* ================= RESIZE ================= */
     window.addEventListener('resize', () => {
