@@ -595,33 +595,46 @@
     gridHelper.position.y = 0.01;
     scene.add(gridHelper);
 
-    // Glass walls with transparency applied directly
-    const wallBack = glassBox(CONFIG.roomSize, CONFIG.wallHeight, 0.12, glassMat, 0, CONFIG.wallHeight / 2, -CONFIG.roomSize / 2);
-    wallBack.name = 'wall_back';
-    const wallLeft = glassBox(0.12, CONFIG.wallHeight, CONFIG.roomSize, glassMat, -CONFIG.roomSize / 2, CONFIG.wallHeight / 2, 0);
-    wallLeft.name = 'wall_left';
-    const wallRight = glassBox(0.12, CONFIG.wallHeight, CONFIG.roomSize, glassMat, CONFIG.roomSize / 2, CONFIG.wallHeight / 2, 0);
-    wallRight.name = 'wall_right';
-    const wallFront = glassBox(CONFIG.roomSize, CONFIG.wallHeight, 0.12, glassMat, 0, CONFIG.wallHeight / 2, CONFIG.roomSize / 2);
-    wallFront.name = 'wall_front';
-    const ceiling = glassBox(CONFIG.roomSize, 0.12, CONFIG.roomSize, frostedMat, 0, CONFIG.wallHeight - 0.06, 0);
-    ceiling.name = 'ceiling';
+    // No walls/ceiling — fully open-air isometric office (open to the sky & city)
+    // (Building shell intentionally removed so the scene reads as an open platform)
 
-    // Apply transparency settings to all walls
-    const walls = [
-      scene.getObjectByName('wall_back'),
-      scene.getObjectByName('wall_left'),
-      scene.getObjectByName('wall_right'),
-      scene.getObjectByName('wall_front')
+    // Night city skyline backdrop (visible through the open sides)
+    const skylineMat = new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.9, transparent: true, opacity: 0.92 });
+    const skyline = new THREE.Mesh(new THREE.PlaneGeometry(160, 40), skylineMat);
+    skyline.position.set(0, 12, -70);
+    skyline.rotation.x = -Math.PI / 2;
+    scene.add(skyline);
+
+    // Skyline building silhouettes (procedural blocks with lit windows)
+    const skylineGroup = new THREE.Group();
+    const buildingSpecs = [
+      { x: -60, h: 14, w: 8 }, { x: -48, h: 22, w: 6 }, { x: -36, h: 10, w: 7 },
+      { x: -22, h: 26, w: 8 }, { x: -10, h: 12, w: 5 }, { x: 2, h: 30, w: 9 },
+      { x: 16, h: 18, w: 7 }, { x: 28, h: 24, w: 8 }, { x: 42, h: 14, w: 6 },
+      { x: 54, h: 20, w: 7 }, { x: 66, h: 12, w: 5 }
     ];
+    buildingSpecs.forEach(b => {
+      const building = new THREE.Mesh(
+        new THREE.BoxGeometry(b.w, b.h, 1.2),
+        new THREE.MeshStandardMaterial({ color: 0x04101f, roughness: 0.85 })
+      );
+      building.position.set(b.x, b.h / 2, -68);
+      building.castShadow = false;
+      skylineGroup.add(building);
 
-    walls.forEach(wall => {
-      if (!wall) return;
-      wall.material.transparent = true;
-      wall.material.opacity = 0.12;
-      wall.material.depthWrite = false;
-      wall.material.side = THREE.DoubleSide;
+      // Lit windows (cyan glow dots)
+      const winGeo = new THREE.PlaneGeometry(0.4, 0.5);
+      const winMat = new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x22d3ee, emissiveIntensity: 2.5, transparent: true, opacity: 0.9 });
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 3; col++) {
+          const win = new THREE.Mesh(winGeo, winMat);
+          win.position.set(b.x - b.w / 2 + 0.8 + col * (b.w / 3), 1.5 + row * (b.h / 5), -67.4);
+          skylineGroup.add(win);
+        }
+      }
     });
+    skylineGroup.position.y = 2;
+    scene.add(skylineGroup);
 
     // Glass partitions inside (kept for interior decoration)
     glassPlane(14, 8, glassPanelMat, -16, 5, -8, 0, 0.4);
@@ -669,6 +682,14 @@
       // Chair
       chair(d.pos[0], 0.55, d.pos[1], d.rot);
 
+      // Second chair for larger desks (Admin)
+      if (d.deskW >= 3.4 && !d.isCEO) {
+        const sitDepth = d.deskD / 2 + 0.45;
+        const dx = Math.sin(d.rot) * sitDepth;
+        const dz = Math.cos(d.rot) * sitDepth;
+        chair(d.pos[0] - dx, 0.55, d.pos[1] + dz, d.rot + Math.PI);
+      }
+
       // Person behind desk (named for positioning)
       const p = person(d.pos[0], 0.95, d.pos[1], d.isCEO, d.color, d.isCEO ? 1.25 : 1);
       p.name = 'character_' + d.id;
@@ -685,6 +706,7 @@
 
     // ========== Position person seated at their OWN desk + computer in front ==========
     // Each character is assigned to exactly one desk — no clustering at a central table.
+    // 1 employee per desk by default; larger desks (CEO, Admin) get a 2nd employee.
     depts.forEach(d => {
       const person = scene.getObjectByName('character_' + d.id);
       const deskObj = scene.getObjectByName('desk_' + d.id);
@@ -703,7 +725,7 @@
         person.position.set(
           d.pos[0] + dx,
           0.95,
-          d.pos[1] - dz   // -Z side = keyboard/user side
+          d.pos[2] - dz   // -Z side = keyboard/user side
         );
         // Face the desk (toward +Z in desk local space)
         person.rotation.y = d.rot;
@@ -724,6 +746,22 @@
         );
         screen.position.set(0, 0.75, -0.36);
         deskObj.add(screen);
+      }
+
+      // Second employee for larger desks (CEO, Admin) — seated at the opposite side
+      if (d.deskW >= 3.4 && !d.isCEO) {
+        const p2 = person(d.pos[0], 0.95, d.pos[1], false, d.color, 1);
+        p2.name = 'character_' + d.id + '_2';
+        const sitDepth2 = d.deskD / 2 + 0.45;
+        const dx2 = Math.sin(d.rot) * sitDepth2;
+        const dz2 = Math.cos(d.rot) * sitDepth2;
+        p2.position.set(
+          d.pos[0] - dx2,
+          0.95,
+          d.pos[1] + dz2   // opposite side of the desk
+        );
+        p2.rotation.y = d.rot + Math.PI;   // face the desk from the other side
+        people.push({ mesh: p2, id: d.id + '_2', name: d.name, title: d.title, desc: d.desc, isCEO: false, baseY: 0.95, color: d.color, skills: d.skills, rotY: d.rot + Math.PI });
       }
     });
 
@@ -873,6 +911,17 @@
         }
         if (found) break;
       }
+
+      // Update hover scale for all people (including 2nd employees)
+      people.forEach(p => {
+        if (p !== found && p !== hovered) {
+          const resetScale = p.isCEO ? 1.25 : 1;
+          gsap.to(p.mesh.scale, {
+            x: resetScale, y: resetScale, z: resetScale,
+            duration: 0.2, ease: "power2.out"
+          });
+        }
+      });
 
       if (found !== hovered) {
         // Reset scale of previously hovered item
