@@ -1,0 +1,99 @@
+{
+  "name": "WGI AI Laboratory - Department Status Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/data/departments.json",
+        "method": "GET",
+        "options": {}
+      },
+      "id": "fetch-department-status",
+      "name": "Fetch Department Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform department data for the 3D Laboratory\nconst data = $input.all();\nconst departments = data[0].json.departments || data[0].json;\n\nconst summary = Object.entries(departments).map(([id, dept]) => ({\n  agent: id,\n  status: dept.status,\n  progress: dept.progress,\n  risk: dept.risk,\n  note: dept.note,\n  owner: dept.owner\n}));\n\nreturn [{\n  json: {\n    updated: new Date().toISOString(),\n    totalDepartments: summary.length,\n    activeCount: summary.filter(d => d.status === 'ready' || d.status === 'in-progress').length,\n    atRiskCount: summary.filter(d => d.risk === 'high' || d.risk === 'critical').length,\n    departments: summary\n  }\n}];"
+      },
+      "id": "transform-laboratory-data",
+      "name": "Transform Laboratory Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wgi-laboratory-sync",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "laboratory-webhook",
+      "name": "Laboratory Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Department Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Department Status": {
+      "main": [
+        [
+          {
+            "node": "Transform Laboratory Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Laboratory Data": {
+      "main": [
+        [
+          {
+            "node": "Laboratory Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1.0.0",
+  "createdAt": "2026-11-03T00:00:00.000Z",
+  "updatedAt": "2026-11-03T00:00:00.000Z"
+}

@@ -65,6 +65,9 @@
       backdrop-filter: blur(12px);
       box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55);
       transform: translate(0, 8px);
+      /* Accessibility: ensure tooltip is readable and not clipped */
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
     #tooltip.show { opacity: 1; transform: translate(0, 0); }
     #tooltip .t-title { font-size: 14.5px; font-weight: 800; color: #fff; margin-bottom: 2px; letter-spacing: 0.02em; }
@@ -693,7 +696,7 @@
     let syncTimer = null;
 
     function fetchLiveStatus() {
-      fetch('/data/departments.json')
+      fetch('data/departments.json')
         .then(r => r.json())
         .then(data => {
           syncStatus.style.display = 'block';
@@ -773,9 +776,30 @@
       }
 
       if (found !== hovered) {
+        // Reset scale of previously hovered item
+        if (hovered) {
+          const resetScale = hovered.isCEO ? 1.25 : 1;
+          gsap.to(hovered.mesh.scale, {
+            x: resetScale,
+            y: resetScale,
+            z: resetScale,
+            duration: 0.2,
+            ease: "power2.out"
+          });
+        }
+
         hovered = found;
+
         if (found) {
-          found.mesh.scale.setScalar(found.isCEO ? 1.25 : 1);
+          // Scale up hovered item
+          const targetScale = (found.isCEO ? 1.25 : 1) * 1.1;
+          gsap.to(found.mesh.scale, {
+            x: targetScale,
+            y: targetScale,
+            z: targetScale,
+            duration: 0.2,
+            ease: "power2.out"
+          });
           setTooltip(buildTooltipHTML(found));
         } else {
           setTooltip(null);
