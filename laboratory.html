@@ -721,27 +721,27 @@
     // Each character is assigned to exactly one desk — no clustering at a central table.
     // 1 employee per desk by default; larger desks (CEO, Admin) get a 2nd employee.
     depts.forEach(d => {
-      const person = scene.getObjectByName('character_' + d.id);
+      const character = scene.getObjectByName('character_' + d.id);
       const deskObj = scene.getObjectByName('desk_' + d.id);
 
       if (deskObj) {
         deskObj.scale.set(1, 1, 1);
       }
 
-      if (person && deskObj) {
+      if (character && deskObj) {
         // Desk local axes: +Z is "front" (monitor side), -Z is where the user sits (keyboard side).
         // Place the person just behind their own desk, facing it.
         const sitDepth = d.deskD / 2 + 0.45;
         const dx = Math.sin(d.rot) * sitDepth;
         const dz = Math.cos(d.rot) * sitDepth;
 
-        person.position.set(
+        character.position.set(
           d.pos[0] + dx,
           0.95,
           d.pos[2] - dz   // -Z side = keyboard/user side
         );
         // Face the desk (toward +Z in desk local space)
-        person.rotation.y = d.rot;
+        character.rotation.y = d.rot;
       }
 
       // Add a computer monitor on the desk (in front of the person)
