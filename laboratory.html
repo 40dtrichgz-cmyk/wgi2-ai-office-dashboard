@@ -595,13 +595,33 @@
     gridHelper.position.y = 0.01;
     scene.add(gridHelper);
 
-    // Remove surrounding glass walls (Commented out/removed as requested)
-    /*
+    // Glass walls with transparency applied directly
     const wallBack = glassBox(CONFIG.roomSize, CONFIG.wallHeight, 0.12, glassMat, 0, CONFIG.wallHeight / 2, -CONFIG.roomSize / 2);
+    wallBack.name = 'wall_back';
     const wallLeft = glassBox(0.12, CONFIG.wallHeight, CONFIG.roomSize, glassMat, -CONFIG.roomSize / 2, CONFIG.wallHeight / 2, 0);
+    wallLeft.name = 'wall_left';
     const wallRight = glassBox(0.12, CONFIG.wallHeight, CONFIG.roomSize, glassMat, CONFIG.roomSize / 2, CONFIG.wallHeight / 2, 0);
+    wallRight.name = 'wall_right';
+    const wallFront = glassBox(CONFIG.roomSize, CONFIG.wallHeight, 0.12, glassMat, 0, CONFIG.wallHeight / 2, CONFIG.roomSize / 2);
+    wallFront.name = 'wall_front';
     const ceiling = glassBox(CONFIG.roomSize, 0.12, CONFIG.roomSize, frostedMat, 0, CONFIG.wallHeight - 0.06, 0);
-    */
+    ceiling.name = 'ceiling';
+
+    // Apply transparency settings to all walls
+    const walls = [
+      scene.getObjectByName('wall_back'),
+      scene.getObjectByName('wall_left'),
+      scene.getObjectByName('wall_right'),
+      scene.getObjectByName('wall_front')
+    ];
+
+    walls.forEach(wall => {
+      if (!wall) return;
+      wall.material.transparent = true;
+      wall.material.opacity = 0.12;
+      wall.material.depthWrite = false;
+      wall.material.side = THREE.DoubleSide;
+    });
 
     // Glass partitions inside (kept for interior decoration)
     glassPlane(14, 8, glassPanelMat, -16, 5, -8, 0, 0.4);
@@ -642,14 +662,16 @@
       // Department sign above desk
       departmentSign(d.pos[0], 4.6, d.pos[1], d.name, d.color, d.rot, d.isCEO);
 
-      // Desk
-      desk(d.pos[0], 0, d.pos[1], d.deskW, d.deskD, d.rot, true);
+      // Desk (named for positioning)
+      const deskObj = desk(d.pos[0], 0, d.pos[1], d.deskW, d.deskD, d.rot, true);
+      deskObj.name = 'desk_' + d.id;
 
       // Chair
       chair(d.pos[0], 0.55, d.pos[1], d.rot);
 
-      // Person behind desk
+      // Person behind desk (named for positioning)
       const p = person(d.pos[0], 0.95, d.pos[1], d.isCEO, d.color, d.isCEO ? 1.25 : 1);
+      p.name = 'character_' + d.id;
       people.push({ mesh: p, id: d.id, name: d.name, title: d.title, desc: d.desc, isCEO: d.isCEO, baseY: 0.95, color: d.color, skills: d.skills, rotY: d.rot });
 
       // Department hologram above desk
@@ -659,6 +681,75 @@
       if (!d.isCEO) {
         chair(d.pos[0], 0.55, d.pos[1] + 1.6, d.rot + Math.PI);
       }
+    });
+
+    // ========== Position person seated at desk + computer in front ==========
+    depts.forEach(d => {
+      const person = scene.getObjectByName('character_' + d.id);
+      const deskObj = scene.getObjectByName('desk_' + d.id);
+
+      if (deskObj) {
+        // Keep desk at its original position (don't reset to 0,0,0)
+        deskObj.scale.set(1, 1, 1);
+      }
+
+      if (person && deskObj) {
+        // Position person behind the desk (seated position)
+        person.position.set(
+          -0.8,
+          0.95,
+          1.2
+        );
+        person.rotation.y = d.rot;
+      }
+
+      // Add a computer monitor on the desk (in front of the person)
+      if (deskObj) {
+        const computer = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 0.8, 0.1),
+          new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.8 })
+        );
+        computer.position.set(0, 0.75, -0.3);
+        deskObj.add(computer);
+
+        const screen = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.0, 0.65),
+          neonMat
+        );
+        screen.position.set(0, 0.75, -0.36);
+        deskObj.add(screen);
+      }
+    });
+
+    // ========== Add decorative icons around desks ==========
+    const iconNames = ['icon_pyramid', 'icon_diamond', 'icon_cube'];
+    const iconColors = [CONFIG.accentCyan, 0x34d399, 0xfbbf24];
+
+    depts.forEach((d, deptIdx) => {
+      const deskObj = scene.getObjectByName('desk_' + d.id);
+      if (!deskObj) return;
+
+      iconNames.forEach((name, iconIdx) => {
+        const icon = new THREE.Mesh(
+          new THREE.BoxGeometry(0.2, 0.2, 0.2),
+          new THREE.MeshStandardMaterial({
+            color: iconColors[iconIdx],
+            emissive: iconColors[iconIdx],
+            emissiveIntensity: 1.5,
+            transparent: true,
+            opacity: 0.85
+          })
+        );
+        icon.name = name + '_' + d.id;
+        const angle = (iconIdx / iconNames.length) * Math.PI * 2 + (deptIdx * 0.5);
+        icon.position.set(
+          Math.cos(angle) * 1.8,
+          1.2,
+          Math.sin(angle) * 1.8
+        );
+        icon.scale.set(0.8, 0.8, 0.8);
+        deskObj.add(icon);
+      });
     });
 
     // Central CEO feature platform (back)
