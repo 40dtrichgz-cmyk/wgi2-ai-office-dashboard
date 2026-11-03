@@ -595,13 +595,15 @@
     gridHelper.position.y = 0.01;
     scene.add(gridHelper);
 
-    // Glass walls
-    glassBox(CONFIG.roomSize, CONFIG.wallHeight, 0.12, glassMat, 0, CONFIG.wallHeight / 2, -CONFIG.roomSize / 2);
-    glassBox(0.12, CONFIG.wallHeight, CONFIG.roomSize, glassMat, -CONFIG.roomSize / 2, CONFIG.wallHeight / 2, 0);
-    glassBox(0.12, CONFIG.wallHeight, CONFIG.roomSize, glassMat, CONFIG.roomSize / 2, CONFIG.wallHeight / 2, 0);
+    // Remove surrounding glass walls (Commented out/removed as requested)
+    /*
+    const wallBack = glassBox(CONFIG.roomSize, CONFIG.wallHeight, 0.12, glassMat, 0, CONFIG.wallHeight / 2, -CONFIG.roomSize / 2);
+    const wallLeft = glassBox(0.12, CONFIG.wallHeight, CONFIG.roomSize, glassMat, -CONFIG.roomSize / 2, CONFIG.wallHeight / 2, 0);
+    const wallRight = glassBox(0.12, CONFIG.wallHeight, CONFIG.roomSize, glassMat, CONFIG.roomSize / 2, CONFIG.wallHeight / 2, 0);
     const ceiling = glassBox(CONFIG.roomSize, 0.12, CONFIG.roomSize, frostedMat, 0, CONFIG.wallHeight - 0.06, 0);
+    */
 
-    // Internal glass partitions
+    // Glass partitions inside (kept for interior decoration)
     glassPlane(14, 8, glassPanelMat, -16, 5, -8, 0, 0.4);
     glassPlane(14, 8, glassPanelMat, 16, 5, -8, 0, -0.4);
     glassPlane(12, 7, glassPanelMat, 0, 5, 14, 0, Math.PI / 2);
